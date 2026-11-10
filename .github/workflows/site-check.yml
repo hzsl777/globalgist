@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   check:
-    # Only the refresh started by the daily run, not the one every three hours.
+    # Only the refresh started by the daily run, not the one every six hours.
     if: github.event_name != 'workflow_run' || github.event.workflow_run.event == 'workflow_run'
     runs-on: ubuntu-latest
     timeout-minutes: 10

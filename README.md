@@ -23,7 +23,7 @@ The idea comes from Radio Garden. When the page opens, the map turns until a pla
 - **Four levels of detail.** The day's events sit under the word, one line each. Each event opens to an explanation with numbered citations. Each citation opens to its source with the passage quoted. Headlines appear as the outlets published them.
 - **Stories sit where they happened** (decisions 44 and 135). The grouping model names the city. Code looks the name up in the country the model named, first in a fixed list of cities, then in a list of towns of 500 people or more. A story with no city that checks out stays at its outlet's city.
 - **818 outlets in 746 places.** They cover nearly every country and territory, and also stateless nations, Indigenous communities and the regions of the ten most populous countries (decisions 31, 45, 48 and 49). The outlets are the `desk: world` entries in `config/sources.yaml`.
-- **Local stories from towns.** GDELT's news index adds towns the outlets do not reach (decisions 54, 67 and 78). The map reads them again every three hours (decision 80). They show only at the closest zoom.
+- **Local stories from towns.** GDELT's news index adds towns the outlets do not reach (decisions 54, 67 and 78). The map reads them again every six hours (decision 80). They show only at the closest zoom.
 - **Zoom shows more.** Zoomed out, the map shows the most important and most widely reported stories. Each step in adds the next of five tiers (decisions 30 and 46). A place's mark shows the model's 1 to 5 rating of its top story. Its size shows how many reports the place has.
 - **More.** There are 69 designs, a Map or Globe view, a 24-hour replay, topic filters, place search, pinned places, and translation into about a hundred languages.
 
@@ -88,10 +88,10 @@ The repository is public, so Actions minutes are free (decision 130). The workfl
 - Artifacts expire after two days (the daily map file and the site check's screenshots) or three days (model eval reports).
 - Deploy, eval and preflight run only by hand.
 
-Measured in November 2026, a month of these jobs comes to about 1,400 minutes. On a private repository they would use most of the 2,000 free minutes a month:
+Measured in November 2026, a month of these jobs comes to about 1,000 minutes. On a private repository they would use most of the 2,000 free minutes a month:
 
 - the daily run, 9 to 20 minutes on a normal night, most of it waiting for the model's flex queue
-- the refresh every three hours, about 3.5 minutes each, so about 27 minutes a day
+- the refresh every six hours, about 3.5 minutes each, so about 14 minutes a day
 - CI on each pull request
 - the site check (`site-check.yml`, decision 85), about a minute a day
 

@@ -9,9 +9,9 @@
  */
 export const CRON_DAILY = "7 4 * * *";
 export const CRON_DAILY_WINTER = "7 5 * * *";
-export const CRON_REFRESH = "41 */3 * * *";
+export const CRON_REFRESH = "41 */6 * * *";
 
-const REPO = "hzsl777/capy";
+const REPO = "hzsl777/globalgist";
 
 /** GITHUB_DISPATCH_TOKEN: a fine-grained token for this repository only, with Actions: read and write. */
 export type ClockEnv = { GITHUB_DISPATCH_TOKEN?: string };

@@ -203,7 +203,7 @@ export type IngestReport = { source: string; fetched: number; inserted: number; 
 
 /**
  * Feeds fetched at once. Hundreds of outlets one after another could take an hour on a slow day, and the refresh reads
- * them all every three hours (decision 130).
+ * them all every six hours (decision 130).
  */
 const INGEST_CONCURRENCY = 24;
 /** After this many failed days in a row a source is tried once a week, on Sundays (decision 36). */
