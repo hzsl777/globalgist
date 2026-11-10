@@ -1377,3 +1377,5 @@ GitHub emailed that the hzsl777 account used 100% of its 2 GB of Actions storage
 3. **The README says so** and lists what runs.
 
 Not changed: the refresh every three hours, which keeps the local stories current (decision 80). Running it every six hours would halve its minutes and make those stories up to six hours old; that is a product choice for Davis. The demo page's `demo_run_id` now works only for a run from the last two days.
+
+Measured after decision 163 merged (November 10, 2026): a daily run with nothing to build took 8 seconds with the precheck, against 30 to 38 seconds before, so the precheck saves about a minute a day. The larger costs are the refresh (3.4 minutes on average, 8 a day, about 27 minutes a day) and the daily run itself (9 to 20 minutes). Together with CI that is about 1,400 minutes a month, under the 2,000 free minutes a private repository would get. The repository's artifacts total 29 MB. Neither the minutes nor the repository's storage explains the account's 2 GB.

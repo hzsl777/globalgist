@@ -84,14 +84,14 @@ The daily run needs no deploy. It stores the day's file and its tiles of local s
 
 The repository is public, so Actions minutes are free (decision 130). The workflows still keep usage low (decision 163):
 
-- The daily run starts with a job of a few seconds. It asks the site whether yesterday's map is up. If it is, the install and the run are skipped. The Worker's clock starts the daily run twice a night and GitHub's schedule starts it a third time, and only one of them has a day to build.
+- The daily run starts with a job of a few seconds. It asks the site whether yesterday's map is up. If it is, the install and the run are skipped. A run with nothing to build now takes about 8 seconds instead of about 35. The Worker's clock starts the daily run twice a night and GitHub's schedule starts it a third time, and only one of them has a day to build.
 - Artifacts expire after two days (the daily map file and the site check's screenshots) or three days (model eval reports).
 - Deploy, eval and preflight run only by hand.
 
-On a private repository these jobs would pass the 2,000 free minutes a month:
+Measured in November 2026, a month of these jobs comes to about 1,400 minutes. On a private repository they would use most of the 2,000 free minutes a month:
 
-- the daily run, about 50 minutes, most of it waiting for the model's flex queue
-- the refresh every three hours, about 3 to 5 minutes each
+- the daily run, 9 to 20 minutes on a normal night, most of it waiting for the model's flex queue
+- the refresh every three hours, about 3.5 minutes each, so about 27 minutes a day
 - CI on each pull request
 - the site check (`site-check.yml`, decision 85), about a minute a day
 
