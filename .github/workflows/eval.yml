@@ -54,6 +54,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: model-eval
+          retention-days: 3
           # The report is in .eval, a hidden folder, which the upload skips unless told not to. The snapshot beside it
           # is not matched by the paths below, so the article text still stays on the runner.
           include-hidden-files: true

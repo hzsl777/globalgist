@@ -27,8 +27,35 @@ on:
 permissions:
   contents: read
 jobs:
-  day:
+  # The Worker's clock starts this twice a night and GitHub's own schedule a third time, and only one of them has a day to
+  # build. This job is a few seconds: it asks the site whether yesterday's map is already up and, for those clock and
+  # schedule runs, stops the rest from installing and running at all (decision 163). It fails open: if the site cannot be
+  # reached, the day job runs and its own check decides.
+  precheck:
     if: inputs.demo_run_id == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      needed: ${{ steps.p.outputs.needed }}
+    steps:
+      - id: p
+        env:
+          FLAG: ${{ github.event_name == 'schedule' || inputs.if_missing == 'true' }}
+          DATE_IN: ${{ inputs.date }}
+          STAGE_IN: ${{ inputs.stage }}
+          SITE: ${{ vars.SITE_DOMAIN || 'globalgist.io' }}
+        run: |
+          needed=true
+          if [ "$FLAG" = true ] && [ -z "$DATE_IN" ] && [ -z "$STAGE_IN" ]; then
+            day=$(TZ=America/New_York date -d yesterday +%F)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://$SITE/data/$day.json" || true)
+            echo "The site answers $code for $day."
+            if [ "$code" = 200 ]; then needed=false; fi
+          fi
+          echo "needed=$needed" >> "$GITHUB_OUTPUT"
+  day:
+    needs: precheck
+    if: inputs.demo_run_id == '' && needs.precheck.outputs.needed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     # One writer of the map at a time, shared with the refresh during the day (refresh.yml, decision 80).
@@ -154,7 +181,7 @@ jobs:
           path: |
             map.json
             local/
-          retention-days: 7
+          retention-days: 2
 
   # A day's map file on its own branch, so a session that can reach GitHub over git but not the artifact store can
   # load it into the demo page. No secrets here; only this job can push, and only to demo-data.
