@@ -20,7 +20,7 @@ describe("the site's clock (decision 91)", () => {
     const calls: Call[] = [];
     expect(await startRun(CRON_DAILY, { GITHUB_DISPATCH_TOKEN: "t0ken" }, answering(204, calls))).toBe("started daily.yml");
     expect(calls).toHaveLength(1);
-    expect(calls[0]!.url).toBe("https://api.github.com/repos/hzsl777/capy/actions/workflows/daily.yml/dispatches");
+    expect(calls[0]!.url).toBe("https://api.github.com/repos/hzsl777/globalgist/actions/workflows/daily.yml/dispatches");
     expect(calls[0]!.init.method).toBe("POST");
     expect((calls[0]!.init.headers as Record<string, string>).Authorization).toBe("Bearer t0ken");
     expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ ref: "main", inputs: { if_missing: "true" } });

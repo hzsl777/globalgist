@@ -1,9 +1,9 @@
 name: Refresh local stories
-# Between daily runs, every three hours: the latest map's local stories become the last 24 hours' of GDELT (decision 80),
+# Between daily runs, every six hours: the latest map's local stories become the last 24 hours' of GDELT (decision 80),
 # and the outlets' new articles of the day under way are read and stored, so the daily run loses none to a feed that holds
 # only its newest items. The model no longer groups them into stories through the day (decision 130 ended by decision
 # 152); the daily run groups the whole day once it ends. The repository is public, so Actions minutes are not counted.
-# The Worker's cron trigger starts it every three hours at minute 41 (decision 91); GitHub's own schedule skipped
+# The Worker's cron trigger starts it every six hours at minute 41 (decision 91); GitHub's own schedule skipped
 # runs for hours, and is no longer used here, so a run is never started twice.
 # It no longer follows each daily run: the daily run has just stored the same day's local stories, and each run reads
 # the whole map back from the database, whose free plan allows 5 GB of transfer a month (decision 124).

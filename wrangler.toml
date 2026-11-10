@@ -38,7 +38,7 @@ binding = "AI"
 enabled = true
 
 # The site's clock (decision 91): Cloudflare starts the GitHub runs on time. The daily run (only if its day is missing)
-# at 04:07 and 05:07 UTC, just after midnight in New York in summer and in winter (decision 127); every three hours at
+# at 04:07 and 05:07 UTC, just after midnight in New York in summer and in winter (decision 127); every six hours at
 # minute 41 the refresh. Needs the secret GITHUB_DISPATCH_TOKEN (docs/RUNBOOK.md).
 [triggers]
-crons = ["7 4 * * *", "7 5 * * *", "41 */3 * * *"]
+crons = ["7 4 * * *", "7 5 * * *", "41 */6 * * *"]

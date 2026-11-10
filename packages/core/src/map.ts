@@ -342,7 +342,7 @@ export function withLocalStories(file: MapFile, stories: LocalStory[], now: Date
 
 /**
  * The finished day's file with the outlets' stories of the day under way added (decision 130): what the refresh stores
- * every three hours. `today` is that day as `loadMapView` builds it while it runs, its articles grouped so far. Its
+ * every six hours. `today` is that day as `loadMapView` builds it while it runs, its articles grouped so far. Its
  * stories join the file's by place id, so a city stays one dot; any the file already had from an earlier refresh are
  * replaced, and the finished day's own stories, events and word stay as they are. Today has no explanations yet, so
  * none of its stories opens one. The file is as new as its newest story, never newer than now.
