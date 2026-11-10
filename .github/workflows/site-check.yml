@@ -1,7 +1,7 @@
 name: Site check
 # Checks the live site from outside once a day, after the refresh that follows the daily run, and on demand: the page
 # and its headers, the day's map file and a tile, paths that must 404, and the page in a real browser at desktop and
-# phone width, with screenshots kept for a week. A failure emails the owner like any failed run. About a minute a
+# phone width, with screenshots kept for two days. A failure emails the owner like any failed run. About a minute a
 # run, 30 a month. The address is the repository variable SITE_URL, or SITE_DOMAIN, or the workers.dev address.
 on:
   workflow_run:
@@ -33,4 +33,4 @@ jobs:
         with:
           name: site-check
           path: site-check
-          retention-days: 7
+          retention-days: 2
