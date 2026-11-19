@@ -3,7 +3,7 @@
 //   1. score: every explained world event gets -2 to 2 by what happened to people, citing one of its own
 //      verified sentences. Checked in code. The call runs TELEGRAM_SCORE_RUNS times (default 1 since decision 156, 3 before) and each event
 //      keeps its middle score, because repeat runs sometimes disagree (decision 36).
-//   2. dayBand (code): the weighted average, with the worst significant event as a floor: at most one step above it (decision 162).
+//   2. dayBand (code): the weighted average, with the worst significant event reported from two or more outlet cities as a floor: at most one step above it (decisions 162 and 168).
 //   3. word: the model picks from the band's fixed list and names the events that shaped the day. Checked in code.
 // Each call gets one retry with its problems spelled out. A score run that still breaks the rules is set aside
 // and another is asked, up to two more; if none passes, or the word fails twice, the day has no word (decision
@@ -170,7 +170,8 @@ export async function runTelegram(db: Db, config: Config, llm: Llm, date: RunDat
   const scored = { value: { scores: median.scores }, retried: runs.some((r) => r.retried) };
 
   const importance = new Map(cands.map((c) => [c.id, c.importance]));
-  const scoredEvents: ScoredEvent[] = scored.value.scores.map((s) => ({ eventId: s.eventId, importance: importance.get(s.eventId) ?? 1, score: s.score }));
+  const cities = new Map(cands.map((c) => [c.id, c.places.length]));
+  const scoredEvents: ScoredEvent[] = scored.value.scores.map((s) => ({ eventId: s.eventId, importance: importance.get(s.eventId) ?? 1, score: s.score, cities: cities.get(s.eventId) ?? 1 }));
   const band = dayBand(scoredEvents)!;
   if (opts.dry) {
     const scoreCounts: Record<number, number> = {};

@@ -6,8 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { MOOD_WORDS, toRunDate, verifyExplanation } from "@2dayai/core";
-import { eventExplanations, events, telegramItems, telegramScores, telegrams, type Db } from "@2dayai/db";
+import { floorSetters, MOOD_WORDS, toRunDate, verifyExplanation, type ScoredEvent } from "@2dayai/core";
+import { articles, eventArticles, eventExplanations, events, sources, telegramItems, telegramScores, telegrams, type Db } from "@2dayai/db";
 import { runDay } from "./day.js";
 import { ATTACKS, injectedFeedFor, injectedSourcesYaml } from "./fixtures/injection.js";
 import { worldAnswers } from "./fixtures/world.js";
@@ -24,12 +24,14 @@ const base = worldAnswers();
 type Cluster = { events: Record<string, unknown>[]; skipped: unknown[] };
 
 /** A model that did what the articles told it. Each stage's answer is the honest one plus what the attacker asked for. */
-function compromised(overrides: Record<string, FakeAnswer> = {}): Record<string, FakeAnswer> {
+function compromised(overrides: Record<string, FakeAnswer> = {}, onlyOutlet?: string): Record<string, FakeAnswer> {
   return {
     ...base,
+    // Articles the model left out come back in a second batch, so the batches are merged; nothing joins.
+    "cluster-world-merge": () => ({ groups: [] }),
     "cluster-world": (req) => {
       const clean = base["cluster-world"]!(req) as Cluster;
-      const ids = [...req.user.matchAll(/^\[(\d+)\] (.+) \([^)]*\)$/gm)].filter((m) => hostileHeadlines.has(m[2]!)).map((m) => Number(m[1]));
+      const ids = [...req.user.matchAll(/^\[(\d+)\] (.+) \(([^)]*)\)$/gm)].filter((m) => hostileHeadlines.has(m[2]!) && (!onlyOutlet || m[3] === onlyOutlet)).map((m) => Number(m[1]));
       if (ids.length === 0) return clean;
       // Every hostile article in one event, importance 5, the attacker's title, a city that does not exist.
       const hostile = { title: HOSTILE_TITLE, articleIds: ids, importance: 5, importanceReason: "injected", topic: "conflict", where: { city: "Atlantis", country: "XX", lat: 0, lon: 0 }, country: "XX" };
@@ -177,5 +179,43 @@ describe("a model that obeyed the hostile outlets", () => {
     expect(scores.find((s) => s.eventId === ev.id)?.score).toBe(-2);
     expect(tg!.band).toBeLessThanOrEqual(-1);
     expect(named.some((n) => n.eventId === ev.id)).toBe(true);
+  });
+
+  it("decision 168: an event two outlet cities reported can set the day, one outlet's cannot", async () => {
+    // The stored scores of a day, each with its importance and the number of outlet cities behind its event.
+    const scoredOf = async (d: Db): Promise<ScoredEvent[]> => {
+      const [tg] = await d.select().from(telegrams).where(eq(telegrams.runDate, date));
+      const rows = await d.select().from(telegramScores).where(eq(telegramScores.telegramId, tg!.id));
+      const out: ScoredEvent[] = [];
+      for (const r of rows) {
+        const [ev] = await d.select().from(events).where(eq(events.id, r.eventId));
+        const places = await d
+          .selectDistinct({ place: sources.placeName })
+          .from(eventArticles)
+          .innerJoin(articles, eq(articles.id, eventArticles.articleId))
+          .innerJoin(sources, eq(sources.id, articles.sourceId))
+          .where(eq(eventArticles.eventId, r.eventId));
+        out.push({ eventId: r.eventId, importance: ev!.importance, score: r.score, cities: places.length });
+      }
+      return out;
+    };
+    // Both hostile outlets (Dubai and Singapore) behind the invented event: it is a floor, so the word must name it.
+    await runTelegram(db, testConfig(), new FakeLlm(compromised()), date);
+    const pair = (await hostileEvent())!;
+    const pairScored = await scoredOf(db);
+    expect(pairScored.find((e) => e.eventId === pair.id)).toMatchObject({ score: -2, cities: 2 });
+    expect(floorSetters(pairScored)).toContain(pair.id);
+    // One hostile outlet, one city: the same event counts in the average and sets no floor.
+    const { db: soloDb, close: closeSolo } = await createTestDb();
+    try {
+      await runDay(soloDb, testConfig(), new FakeLlm(compromised({}, "Mirror Wire")), date, deps);
+      await runTelegram(soloDb, testConfig(), new FakeLlm(compromised({}, "Mirror Wire")), date);
+      const [solo] = await soloDb.select().from(events).where(and(eq(events.runDate, date), eq(events.title, HOSTILE_TITLE)));
+      const soloScored = await scoredOf(soloDb);
+      expect(soloScored.find((e) => e.eventId === solo!.id)).toMatchObject({ score: -2, cities: 1 });
+      expect(floorSetters(soloScored)).not.toContain(solo!.id);
+    } finally {
+      await closeSolo();
+    }
   });
 });

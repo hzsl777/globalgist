@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { and, eq, gt, lt, notInArray } from "drizzle-orm";
-import { allowedWords, dayBand, medianScores, MOOD_WORDS, scoreProblems, splitLocal, toRunDate, withTodayStories, WORD_REPEAT_DAYS, wordProblems } from "@2dayai/core";
+import { allowedWords, dayBand, floorOf, medianScores, MOOD_WORDS, scoreProblems, splitLocal, toRunDate, withTodayStories, WORD_REPEAT_DAYS, wordProblems } from "@2dayai/core";
 import { articles, events, loadLocalNames, loadLocalTile, loadMapView, latestMapDate, localBase, sources, telegrams, type Db } from "@2dayai/db";
 import { runDay } from "./day.js";
 import { worldGdeltFor } from "./fixtures/gdelt.js";
@@ -326,7 +326,7 @@ describe("the world desk on a real Postgres engine", () => {
 });
 
 describe("the mood formula", () => {
-  const ev = (eventId: number, importance: number, score: number) => ({ eventId, importance, score });
+  const ev = (eventId: number, importance: number, score: number, cities = 2) => ({ eventId, importance, score, cities });
   it("keeps a bad day within one step of its worst significant event, however much good news there is (decision 162)", () => {
     expect(dayBand([ev(1, 5, -2), ev(2, 4, 2), ev(3, 4, 2), ev(4, 3, 2)])).toBe(-1); // average 0.75 would be 1, the floor holds it at -1
     expect(dayBand([ev(1, 5, -2), ev(2, 5, -2), ev(3, 3, 1)])).toBe(-1); // average -1.3 rounds to -1, one step above the worst
@@ -337,6 +337,18 @@ describe("the mood formula", () => {
   it("ignores minor events when a significant one exists, and uses all events when none is significant", () => {
     expect(dayBand([ev(1, 1, -2), ev(2, 4, 1)])).toBe(1);
     expect(dayBand([ev(1, 2, -1), ev(2, 1, 2)])).toBe(0);
+  });
+  it("lets only an event two or more outlet cities reported set the floor (decision 168)", () => {
+    // One outlet's -2 story counts in the average but holds nothing down: the other events are +1 and +2.
+    expect(dayBand([ev(1, 5, -2, 1), ev(2, 4, 2), ev(3, 4, 2), ev(4, 3, 1)])).toBe(1);
+    // The same story from two cities is a floor again.
+    expect(dayBand([ev(1, 5, -2, 2), ev(2, 4, 2), ev(3, 4, 2), ev(4, 3, 1)])).toBe(-1);
+    // A corroborated -1 is the floor even with a single-city -2 beside it.
+    expect(dayBand([ev(1, 5, -2, 1), ev(2, 4, -1, 3), ev(3, 4, 2)])).toBe(0);
+    expect(floorOf([ev(1, 5, -2, 1), ev(2, 4, -1, 3)])).toBe(-1);
+    expect(floorOf([ev(1, 5, -2, 1)])).toBeNull();
+    // With no floor an all-bad day is still the average.
+    expect(dayBand([ev(1, 5, -2, 1), ev(2, 5, -2, 1)])).toBe(-2);
   });
   it("averages an all-good day by importance and rounds", () => {
     expect(dayBand([ev(1, 5, 2), ev(2, 5, 1)])).toBe(2); // 1.5 rounds up
@@ -359,16 +371,19 @@ describe("telegram checks", () => {
     expect(problems).toContain("event 2 was not scored");
   });
   it("requires a word from the band's list and, on a bad day, the event that set it", () => {
-    const scored = [{ eventId: 1, importance: 5, score: 1 }, { eventId: 2, importance: 4, score: -1 }];
+    const scored = [{ eventId: 1, importance: 5, score: 1, cities: 2 }, { eventId: 2, importance: 4, score: -1, cities: 2 }];
     expect(wordProblems({ word: "Unease", events: [{ eventId: 2, line: "Roads closed." }] }, -1, scored)).toEqual([]);
     expect(wordProblems({ word: "Relief", events: [{ eventId: 2, line: "x" }] }, -1, scored)[0]).toMatch(/not one of: Unease/);
     expect(wordProblems({ word: "Unease", events: [{ eventId: 1, line: "x" }] }, -1, scored)).toContain("include the event that set the day (one of: 2)");
-    expect(wordProblems({ word: "Hope", events: [{ eventId: 1, line: "x" }] }, 1, [{ eventId: 1, importance: 5, score: 1 }])).toEqual([]);
+    expect(wordProblems({ word: "Hope", events: [{ eventId: 1, line: "x" }] }, 1, [{ eventId: 1, importance: 5, score: 1, cities: 2 }])).toEqual([]);
+    // An event only one outlet city reported is not the one the word must name (decision 168).
+    const solo = [{ eventId: 1, importance: 5, score: 1, cities: 2 }, { eventId: 2, importance: 4, score: -2, cities: 1 }];
+    expect(wordProblems({ word: "Watchful", events: [{ eventId: 1, line: "x" }] }, 0, solo)).toEqual([]);
     // The average can lift a bad day one step above its worst event; the word still names that event (decision 162).
     expect(wordProblems({ word: "Watchful", events: [{ eventId: 1, line: "x" }] }, 0, scored)).toContain("include the event that set the day (one of: 2)");
   });
   it("rejects a word from the past week whatever its band, and always leaves a word to choose (decision 128)", () => {
-    const scored = [{ eventId: 2, importance: 4, score: -1 }];
+    const scored = [{ eventId: 2, importance: 4, score: -1, cities: 2 }];
     expect(wordProblems({ word: "Unease", events: [{ eventId: 2, line: "x" }] }, -1, scored, ["unease"])[0]).toMatch(/not one of: Strain/);
     expect(wordProblems({ word: "Strain", events: [{ eventId: 2, line: "x" }] }, -1, scored, ["Unease"])).toEqual([]);
     for (const band of [-2, -1, 0, 1, 2] as const) {
