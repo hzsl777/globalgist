@@ -22,9 +22,9 @@ jobs:
       - name: Skip until email is set up
         if: env.RESEND_API_KEY == '' || env.DATABASE_URL == ''
         run: echo "::notice::RESEND_API_KEY or DATABASE_URL is not set; skipping delivery."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         if: env.RESEND_API_KEY != '' && env.DATABASE_URL != ''
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         if: env.RESEND_API_KEY != '' && env.DATABASE_URL != ''
         with:
           node-version: 22

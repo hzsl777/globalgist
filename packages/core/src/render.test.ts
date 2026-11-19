@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EditionView } from "./edition.js";
-import { renderEditionText, renderEmailHtml, renderEventPage, renderFeedbackConfirm } from "./render.js";
+import { renderEditionText, renderEmailHtml, renderEventPage, renderFeedbackConfirm, safeHref } from "./render.js";
 
 const view: EditionView = {
   editionId: 1,
@@ -47,6 +47,16 @@ describe("render", () => {
   it("feedback confirm page posts back to the same path", () => {
     const h = renderFeedbackConfirm("wrong", "Fed holds", "/f/tok/2026-09-04/7/wrong");
     expect(h).toContain('<form method="post" action="/f/tok/2026-09-04/7/wrong">');
+  });
+  it("links an outlet only by http or https (decision 165)", () => {
+    expect(safeHref("https://fed.test/s?a=1&b=2")).toBe("https://fed.test/s?a=1&amp;b=2");
+    expect(safeHref("javascript:alert(1)")).toBe("#");
+    expect(safeHref("data:text/html,<script>alert(1)</script>")).toBe("#");
+    expect(safeHref("not an address")).toBe("#");
+    const evil = { ...view.items[0]!, sources: [{ ...view.items[0]!.sources[0]!, url: 'javascript:alert("x")' }] };
+    const h = renderEventPage(view, evil, links);
+    expect(h).not.toContain("javascript:");
+    expect(h).toContain('<a href="#">Fed statement</a>');
   });
   it("event page numbers citations and quotes excerpts under sources", () => {
     const h = renderEventPage(view, view.items[0]!, links);

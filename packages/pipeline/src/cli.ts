@@ -37,6 +37,7 @@ const { values, positionals } = parseArgs({
     reader: { type: "string" },
     "dry-run": { type: "boolean", default: false },
     fixture: { type: "boolean", default: false },
+    injection: { type: "boolean", default: false },
     force: { type: "boolean", default: false },
     "if-missing": { type: "boolean", default: false },
     outlets: { type: "boolean", default: false },
@@ -95,6 +96,7 @@ const HELP = `Commands:
   telegram dry           score the date and the 7 days before it again and print their bands, writing nothing (decision 161)
   eval [--setups s]      compare models on one day's world articles: cost, the code checks, every score (decision 28)
                          --snapshot f reuses a saved day; --fixture uses the fictional day; --fake skips the model
+                         --injection runs the fictional day with two hostile outlets added, in memory (decision 165)
   show [--reader r01]    print a reader's edition for the date
   deliver [--dry-run]    send unsent editions whose delivery hour has arrived
   day [--fixture]        ingest, enrich, readers sync, cluster, cluster world, explain, select, telegram
@@ -345,18 +347,19 @@ switch (command) {
   }
   case "eval": {
     const { createTestDb } = await import("./test/db.js");
-    const snapPath = values.snapshot ?? `.eval/snapshot-${date}.json`;
+    const snapPath = values.snapshot ?? (values.injection ? `.eval/snapshot-injection-${date}.json` : `.eval/snapshot-${date}.json`);
     let snap: Snapshot;
     if (existsSync(snapPath)) {
       snap = JSON.parse(readFileSync(snapPath, "utf8")) as Snapshot;
       console.log(`Using ${snapPath}: ${snap.articles.length} articles from ${snap.runDate}.`);
     } else {
-      if (values.fixture) {
+      if (values.fixture || values.injection) {
         const { worldFeedFor, worldSourcesYaml } = await import("./fixtures/world.js");
+        const { injectedFeedFor, injectedSourcesYaml } = await import("./fixtures/injection.js");
         const { db: memory, close } = await createTestDb();
         const dir = mkdtempSync(join(tmpdir(), "capy-eval-"));
-        writeFileSync(join(dir, "sources.yaml"), worldSourcesYaml());
-        await runIngest(memory, loadSources(join(dir, "sources.yaml")), date, async (url) => worldFeedFor(url, date));
+        writeFileSync(join(dir, "sources.yaml"), values.injection ? injectedSourcesYaml() : worldSourcesYaml());
+        await runIngest(memory, loadSources(join(dir, "sources.yaml")), date, async (url) => (values.injection ? injectedFeedFor(url, date) : worldFeedFor(url, date)));
         await runEnrich(memory, date, async () => "");
         snap = await takeSnapshot(memory, date);
         await close();
@@ -389,7 +392,7 @@ switch (command) {
       llmFor = () => new FakeLlm(worldAnswers());
     }
     const results = await runEval(snap, setups, { freshDb: createTestDb, ...(llmFor ? { llmFor } : {}) });
-    const out = values.out ?? `.eval/report-${snap.runDate}.md`;
+    const out = values.out ?? (values.injection ? `.eval/report-injection-${snap.runDate}.md` : `.eval/report-${snap.runDate}.md`);
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, renderReport(snap, results, { fake: values.fake }));
     writeFileSync(out.replace(/\.md$/, "") + ".json", JSON.stringify(results, null, 2));

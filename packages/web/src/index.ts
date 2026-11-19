@@ -66,6 +66,8 @@ type Bindings = { DATABASE_URL: string; WEB_BASE_URL?: string; MAPS?: MapStore; 
 const TRANSLATE_MAX = 400;
 export const TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b";
 const LANG = /^[a-z]{2,3}$/;
+/** Control characters are not in a headline or a summary, and made the model fail after seconds (decision 165). */
+const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 
 function neonDb(env: Bindings): Db {
   return drizzle(neon(env.DATABASE_URL), { schema }) as unknown as Db;
@@ -218,7 +220,7 @@ export function createApp(dbOf: (env: Bindings) => Db = neonDb) {
     const from = c.req.query("from") ?? "";
     const to = c.req.query("to") ?? "";
     const text = (c.req.query("q") ?? "").trim();
-    if (!LANG.test(from) || !LANG.test(to) || from === to || !text || text.length > TRANSLATE_MAX) return c.json({ error: "bad request" }, 400);
+    if (!LANG.test(from) || !LANG.test(to) || from === to || !text || text.length > TRANSLATE_MAX || CONTROL.test(text)) return c.json({ error: "bad request" }, 400);
     const ai = c.env.AI;
     if (!ai) return c.json({ error: "translation is not set up" }, 503);
     const url = new URL(c.req.url);

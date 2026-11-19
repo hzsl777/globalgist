@@ -5,6 +5,7 @@ import { parseHTML } from "linkedom";
 import { and, eq, gte, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { ingestWindow, type RunDate } from "@2dayai/core";
 import { articles, sources, type Db } from "@2dayai/db";
+import { MAX_PAGE_BYTES, safeFetch } from "../net.js";
 import { decodeBody, noControl } from "../text.js";
 import { USER_AGENT } from "./ingest.js";
 
@@ -14,15 +15,11 @@ export const MAX_BODY_CHARS = 30_000;
 export type PageFetcher = (url: string) => Promise<string>;
 
 export const defaultPageFetcher: PageFetcher = async (url) => {
-  const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT, Accept: "text/html" },
-    signal: AbortSignal.timeout(20_000),
-    redirect: "follow",
-  });
+  const { res, body } = await safeFetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "text/html" }, signal: AbortSignal.timeout(20_000) }, MAX_PAGE_BYTES);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   const type = res.headers.get("content-type") ?? "";
   if (!type.includes("html")) throw new Error(`not html: ${type}`);
-  return decodeBody(new Uint8Array(await res.arrayBuffer()), type);
+  return decodeBody(body, type);
 };
 
 /** Pure: main text of an article page, or empty when the extractor finds nothing worth keeping. */
