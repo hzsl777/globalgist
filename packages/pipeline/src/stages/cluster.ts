@@ -89,9 +89,9 @@ export async function runCluster(db: Db, config: Config, llm: Llm, date: RunDate
 
 // v2 (decision 33): the same rules with short reasons, since every reason is billed as output across hundreds of events.
 // v4 (decision 107): a city may come from an institution the articles name, and every event gives its country.
-export const CLUSTER_WORLD_PROMPT_VERSION = 4;
+export const CLUSTER_WORLD_PROMPT_VERSION = 5;
 // v2 (decision 108): same-day developments of one story, by the same main actor on the same matter, are one story.
-export const CLUSTER_WORLD_MERGE_PROMPT_VERSION = 2;
+export const CLUSTER_WORLD_MERGE_PROMPT_VERSION = 3;
 /** The events the word is made from (explain and telegram take importance 3 and up), merged once more on their own. */
 const TOP_IMPORTANCE = 3;
 /** Headlines carry most of the grouping signal; a short lead settles the rest. */

@@ -7,7 +7,7 @@ import { articles, citations, eventArticles, eventExplanations, events, sources,
 import type { Config } from "../config.js";
 import type { Llm, ParseRequest } from "../llm/types.js";
 
-export const EXPLAIN_PROMPT_VERSION = 1;
+export const EXPLAIN_PROMPT_VERSION = 2;
 /**
  * Source text per explanation. A briefing event has one reader's full attention. A world event gets a few
  * sentences on the map, and there are up to WORLD_EXPLAIN_MAX a day, so it reads less (decision 33).

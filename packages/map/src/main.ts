@@ -24,6 +24,7 @@ import {
   loadNews,
   mergeTiles,
   NO_DAY_YET,
+  outletCounts,
   passes,
   replayStops,
   tileCell,
@@ -1537,16 +1538,18 @@ function renderTelegram(panel: HTMLElement) {
     renderPanel();
   });
   const scoreOf = new Map(t.scores.map((sc) => [sc.eventId, sc]));
+  const outlets = outletCounts(file.items);
   const eventButton = (eventId: number, text: string, extra: HTMLElement | null) => {
     const ev = file.events[String(eventId)];
     if (!ev) return [];
     const sc = scoreOf.get(eventId);
+    const n = outlets.get(eventId) ?? 0;
     const b = h(
       "button",
       { type: "button", class: "story" },
       h("span", { class: "headline" }, sc ? scoreChip(sc.score) : null, " ", text),
       extra,
-      h("span", { class: "meta" }, [placesText(ev), `${ev.sources.length} ${ev.sources.length === 1 ? "source" : "sources"}`].filter(Boolean).join(" · ")),
+      h("span", { class: "meta" }, [placesText(ev), n > 0 ? `reported by ${n} ${n === 1 ? "outlet" : "outlets"}` : `${ev.sources.length} ${ev.sources.length === 1 ? "source" : "sources"}`].filter(Boolean).join(" · ")),
     );
     b.addEventListener("click", () => openEvent(ev.id, "telegram"));
     return [h("li", {}, b)];
