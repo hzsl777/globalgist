@@ -12,13 +12,13 @@
   --reticle: #111111;
   --grain-opacity: 0.35;
   --grain-blend: multiply;
-  --font-mast: "IM Fell English SC", Georgia, serif;
-  --font-head: "IM Fell English SC", Georgia, serif;
-  --font-body: "IM Fell English", Georgia, serif;
-  --font-ui: "IM Fell English", Georgia, serif;
+  --font-mast: "Imperial Column", Georgia, serif;
+  --font-head: "Imperial Column", Georgia, serif;
+  --font-body: "Imperial Column", Georgia, serif;
+  --font-ui: "Imperial Column", Georgia, serif;
 }
 :root[data-theme="arcadia"] .telegram .importance {
-  font-family: "Old Standard TT", Georgia, serif;
+  font-family: "Imperial Column", Georgia, serif;
 }
 
 /* ---- Course of Empire (id arcadia): Cole's Destruction as a black-and-white engraving --------------------- */
