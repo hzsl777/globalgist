@@ -32,8 +32,8 @@ import type { Config } from "../config.js";
 import { LlmParseError, type Llm } from "../llm/types.js";
 import type { z } from "zod";
 
-export const TELEGRAM_SCORE_PROMPT_VERSION = 2;
-export const TELEGRAM_WORD_PROMPT_VERSION = 1;
+export const TELEGRAM_SCORE_PROMPT_VERSION = 3;
+export const TELEGRAM_WORD_PROMPT_VERSION = 2;
 export const TELEGRAM_SCOPE = "world";
 
 export type TelegramReport = {

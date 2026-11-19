@@ -135,7 +135,7 @@ describe("cluster world in batches", () => {
     const flood = evs.filter((e) => e.title === TITLES["flood"]);
     expect(flood).toHaveLength(1);
     // The union of the articles, the highest importance, and the topic of the most important member.
-    expect(flood[0]).toMatchObject({ articleIds: floodIds, importance: 4, topic: "environment", promptVersion: "cluster-world.v4+cluster-world-merge.v2" });
+    expect(flood[0]).toMatchObject({ articleIds: floodIds, importance: 4, topic: "environment", promptVersion: "cluster-world.v5+cluster-world-merge.v3" });
     // Not merged, so the port story stays two events.
     expect(evs.filter((e) => e.title === TITLES["port"])).toHaveLength(2);
   });

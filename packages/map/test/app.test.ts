@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { byOrigin, canonicalRedirect, editionDate, FILTERS, formatCoords, formatWeekday, lastFullDay, withoutEmoji, wordStatus, groupByPlace, hasTiers, passes, scaleBar, tierOf, timeAgo, weightOf, type Filters } from "../src/data.ts";
+import { byOrigin, canonicalRedirect, outletCounts, editionDate, FILTERS, formatCoords, formatWeekday, lastFullDay, withoutEmoji, wordStatus, groupByPlace, hasTiers, passes, scaleBar, tierOf, timeAgo, weightOf, type Filters } from "../src/data.ts";
 import type { MapFile, MapItem } from "../src/types.ts";
 
 const base: MapItem = { id: "1", t: 100, title: "t", url: "https://x", domain: "x", publisher: "X", lang: "en", topics: [], place: 0 };
@@ -168,5 +168,22 @@ describe("a place's reports by where their outlets are (decision 98)", () => {
   it("leaves out empty groups", () => {
     expect(byOrigin([item("a", 1, { from: "Kyiv" })]).map((g) => g.origin)).toEqual(["elsewhere"]);
     expect(byOrigin([])).toEqual([]);
+  });
+});
+
+describe("outlet counts (decision 166)", () => {
+  it("counts different outlets per explained event, not articles, and leaves GDELT out", () => {
+    const items: MapItem[] = [
+      { ...base, id: "1", publisher: "A", event: 7 },
+      { ...base, id: "2", publisher: "A", event: 7 },
+      { ...base, id: "3", publisher: "B", event: 7 },
+      { ...base, id: "4", publisher: "C", event: 8 },
+      { ...base, id: "5", publisher: "D", via: "gdelt", event: 8 },
+      { ...base, id: "6", publisher: "E" },
+    ];
+    expect([...outletCounts(items)]).toEqual([
+      [7, 2],
+      [8, 1],
+    ]);
   });
 });

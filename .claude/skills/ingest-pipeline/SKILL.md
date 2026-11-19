@@ -13,9 +13,9 @@ The daily run (`npm run stage -- day`, `.github/workflows/daily.yml`) is one pip
 config/sources.yaml (desk: world, with place)
   -> ingest, enrich                      shared with 2DayAI
   -> cluster world   stages/cluster.ts   WORLD_PER_SOURCE (6, decision 160) newest articles per source, newest first across sources,
-                                         in batches of at most WORLD_CLUSTER_BATCH (300): cluster-world.v4 per batch
+                                         in batches of at most WORLD_CLUSTER_BATCH (300): cluster-world.v5 per batch
                                          (parseMany, ids batch-1, batch-2, ...), a topic per event.
-                                         More than one batch: one merge call (cluster-world-merge.v2) names batch
+                                         More than one batch: one merge call (cluster-world-merge.v3) names batch
                                          events that are the same story; code checks the keys and joins them.
                                          With WORLD_MERGE_TOP on (off since decision 160), then a second merge call
                                          (cluster-world-merge-top) over the events of importance 3 or more only
@@ -23,9 +23,9 @@ config/sources.yaml (desk: world, with place)
                                          in another country than the outlet's are marked abroad (decision 107).
   -> explain         stages/explain.ts   world events of importance 3 or more, at most WORLD_EXPLAIN_MAX (25).
                                          every sentence's quoted passage checked against the article text
-  -> telegram        stages/telegram.ts  score each event (telegram-score.v2, scoreProblems) TELEGRAM_SCORE_RUNS
+  -> telegram        stages/telegram.ts  score each event (telegram-score.v3, scoreProblems) TELEGRAM_SCORE_RUNS
                                          times and keep the middle (medianScores, decision 36), dayBand in code,
-                                         word from MOOD_WORDS[band] (telegram-word.v1, wordProblems). Decision 26.
+                                         word from MOOD_WORDS[band] (telegram-word.v2, wordProblems). Decision 26.
   -> local           stages/local.ts     no model. GDELT articles about every town it tags, placed by
                                          Gazetteer.loadWithTowns().locate(nearest): the city list plus GeoNames'
                                          places of 500 or more (data/towns.txt), same name within 30 km of

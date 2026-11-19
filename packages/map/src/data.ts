@@ -346,3 +346,19 @@ export function byOrigin(items: readonly MapItem[]): OriginGroup[] {
   for (const it of items) groups[it.via === "gdelt" ? 3 : it.abroad ? 2 : it.from ? 1 : 0]!.items.push(it);
   return groups.filter((g) => g.items.length);
 }
+
+/**
+ * How many different outlets reported each explained event, by event id, counted from the day's own articles (decision
+ * 166). Shown beside each event in the word's view and never used to order or rank anything. GDELT's local stories are
+ * left out.
+ */
+export function outletCounts(items: readonly MapItem[]): Map<number, number> {
+  const seen = new Map<number, Set<string>>();
+  for (const it of items) {
+    if (it.event === undefined || it.via === "gdelt") continue;
+    const set = seen.get(it.event) ?? new Set<string>();
+    set.add(it.publisher);
+    seen.set(it.event, set);
+  }
+  return new Map([...seen].map(([id, set]) => [id, set.size]));
+}
