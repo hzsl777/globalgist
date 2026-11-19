@@ -10,6 +10,9 @@ on:
       setups:
         description: 'Setups split by ";". Empty runs the default comparison (docs/RUNBOOK.md, "Choose a model").'
         required: false
+      fixture:
+        description: '"clean" runs the fictional day, "injection" the fictional day with two hostile outlets (decision 165). Both run in memory. Empty uses the real day.'
+        required: false
 permissions:
   contents: read
 jobs:
@@ -30,8 +33,8 @@ jobs:
       # Each setup gets its own in-memory database, so this ceiling applies per setup.
       DAILY_SPEND_CEILING_USD: "1.00"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -40,8 +43,11 @@ jobs:
         env:
           DATE: ${{ inputs.date }}
           SETUPS: ${{ inputs.setups }}
+          FIXTURE: ${{ inputs.fixture }}
         run: |
           args=(eval)
+          if [ "$FIXTURE" = clean ]; then args+=(--fixture); fi
+          if [ "$FIXTURE" = injection ]; then args+=(--injection); fi
           if [ -n "$DATE" ]; then args+=(--date "$DATE"); fi
           if [ -n "$SETUPS" ]; then args+=(--setups "$SETUPS"); fi
           npm run stage -- "${args[@]}"
@@ -51,7 +57,7 @@ jobs:
         if: always()
         run: cat .eval/report-*.md || true
       # The report only. The snapshot holds the outlets' article text and stays on the runner.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: model-eval
           retention-days: 3

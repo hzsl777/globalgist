@@ -8,6 +8,17 @@ export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+/** An outlet's address for a link: only http and https (the page's CSP would stop a script anyway), else "#" (decision 165). */
+export function safeHref(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.protocol === "https:" || u.protocol === "http:") return escapeHtml(u.href);
+  } catch {
+    // Not an address; no link.
+  }
+  return "#";
+}
+
 export type Links = {
   /** Base URL of the Worker, no trailing slash. */
   baseUrl: string;
@@ -96,7 +107,7 @@ export function renderEventPage(v: EditionView, it: EditionItemView, links: Link
     return out;
   };
   const sources = it.sources
-    .map((s, i) => `<div class="src" id="src-${i + 1}"><strong>${i + 1}.</strong> <a href="${escapeHtml(s.url)}">${escapeHtml(s.title)}</a> <span class="muted">${escapeHtml(s.publisher)}, ${s.publishedAt.toISOString().slice(0, 10)}</span>${excerptsFor(s.articleId).map((e) => `<blockquote>${escapeHtml(e)}</blockquote>`).join("")}</div>`)
+    .map((s, i) => `<div class="src" id="src-${i + 1}"><strong>${i + 1}.</strong> <a href="${safeHref(s.url)}">${escapeHtml(s.title)}</a> <span class="muted">${escapeHtml(s.publisher)}, ${s.publishedAt.toISOString().slice(0, 10)}</span>${excerptsFor(s.articleId).map((e) => `<blockquote>${escapeHtml(e)}</blockquote>`).join("")}</div>`)
     .join("");
   const body = `<p class="muted"><a href="${editionUrl(links, v)}">${escapeHtml(v.headline)}</a></p>
 <h1>${escapeHtml(it.title)}</h1>

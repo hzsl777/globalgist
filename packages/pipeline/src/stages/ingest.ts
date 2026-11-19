@@ -2,6 +2,7 @@ import Parser from "rss-parser";
 import { and, eq, inArray, like } from "drizzle-orm";
 import { ArticleSchema, ingestWindow, type Article, type RunDate, type Source } from "@2dayai/core";
 import { articles, sources as sourcesTable, type Db } from "@2dayai/db";
+import { MAX_FEED_BYTES, safeFetch } from "../net.js";
 import { decodeBody, noControl } from "../text.js";
 
 // Parses text only; fetching is the fetcher's job.
@@ -19,12 +20,16 @@ export const USER_AGENT = "Mozilla/5.0 (compatible; GlobalGist/1.0; +https://git
 export class HttpError extends Error {}
 
 export const defaultFetcher: FeedFetcher = async (url) => {
-  const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT, Accept: "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5" },
-    signal: AbortSignal.timeout(20_000),
-  });
+  const { res, body } = await safeFetch(
+    url,
+    {
+      headers: { "User-Agent": USER_AGENT, Accept: "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5" },
+      signal: AbortSignal.timeout(20_000),
+    },
+    MAX_FEED_BYTES,
+  );
   if (!res.ok) throw new HttpError(`${res.status} ${res.statusText}`);
-  return decodeBody(new Uint8Array(await res.arrayBuffer()), res.headers.get("content-type"));
+  return decodeBody(body, res.headers.get("content-type"));
 };
 
 const looksLikeFeed = (text: string) => /<(rss|feed|rdf:RDF)[\s>]/i.test(text.slice(0, 4000));

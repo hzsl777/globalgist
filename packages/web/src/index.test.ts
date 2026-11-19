@@ -294,7 +294,7 @@ describe("the Worker's translation (decision 97)", () => {
   it("refuses anything that isn't a short text between two languages, without calling the model", async () => {
     const { ai, calls } = fakeAi("x");
     const app = createApp(() => db);
-    for (const q of [{ from: "ar", to: "en" }, { from: "ar", to: "ar", q: "x" }, { from: "arabic", to: "en", q: "x" }, { from: "ar", to: "en", q: "x".repeat(401) }]) {
+    for (const q of [{ from: "ar", to: "en" }, { from: "ar", to: "ar", q: "x" }, { from: "arabic", to: "en", q: "x" }, { from: "ar", to: "en", q: "x".repeat(401) }, { from: "ar", to: "en", q: "a\u0000b" }, { from: "ar", to: "en", q: "a\u001bb" }]) {
       const res = await app.request(`/api/translate?${new URLSearchParams(q)}`, {}, { ...env, AI: ai });
       expect(res.status).toBe(400);
     }
