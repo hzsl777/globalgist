@@ -140,24 +140,51 @@ export const TelegramWordSchema = z.object({
 });
 export type TelegramWord = z.infer<typeof TelegramWordSchema>;
 
-export type ScoredEvent = { eventId: number; importance: number; score: number };
+/** Outlet cities that must have reported an event for it to set the day's floor (decision 168). */
+export const MIN_FLOOR_CITIES = 2;
+
+/** A scored event: its importance, its score, and the number of different outlet cities that reported it. */
+export type ScoredEvent = { eventId: number; importance: number; score: number; cities: number };
+
+/** The events the day is read from: the significant ones, or all of them when none is. */
+function poolOf(scored: ScoredEvent[]): ScoredEvent[] {
+  const significant = scored.filter((e) => e.importance >= SIGNIFICANT_IMPORTANCE);
+  return significant.length ? significant : scored;
+}
+
+/** The events that set the floor: the corroborated events whose score is the floor. Empty when there is no floor. */
+export function floorSetters(scored: ScoredEvent[]): number[] {
+  const floor = floorOf(scored);
+  return floor === null ? [] : poolOf(scored).filter((e) => e.cities >= MIN_FLOOR_CITIES && e.score === floor).map((e) => e.eventId);
+}
 
 /**
- * The formula (decision 162). The day is the importance-weighted average of its significant events (all of them when
- * none is significant), rounded, but if any of them scored below zero the day sits no more than one step above the
- * worst: the worst event is a floor, so good news can lighten a bad day by one step and never cancel a tragedy.
+ * The floor (decisions 162 and 168): the lowest score below zero among the day's events that outlets in at least
+ * `MIN_FLOOR_CITIES` different cities reported, or null. An event from one outlet counts in the average but cannot set
+ * the floor, so one outlet's story, true or invented, cannot hold the day down alone.
+ */
+export function floorOf(scored: ScoredEvent[]): number | null {
+  const reported = poolOf(scored).filter((e) => e.cities >= MIN_FLOOR_CITIES);
+  if (reported.length === 0) return null;
+  const worst = Math.min(...reported.map((e) => e.score));
+  return worst < 0 ? worst : null;
+}
+
+/**
+ * The formula. The day is the importance-weighted average of its significant events (all of them when none is
+ * significant), rounded. If a corroborated event scored below zero (`floorOf`), the day sits no more than one step
+ * above it, so good news can lighten a bad day by one step and never cancel a tragedy.
  */
 export function dayBand(scored: ScoredEvent[]): MoodBand | null {
   if (scored.length === 0) return null;
-  const significant = scored.filter((e) => e.importance >= SIGNIFICANT_IMPORTANCE);
-  const pool = significant.length ? significant : scored;
-  const worst = Math.min(...pool.map((e) => e.score));
+  const pool = poolOf(scored);
   const weight = pool.reduce((sum, e) => sum + e.importance, 0);
   const avg = pool.reduce((sum, e) => sum + e.importance * e.score, 0) / weight;
   const rounded = Math.round(avg);
+  const floor = floorOf(scored);
   // + 0 turns a rounded -0 into 0.
-  if (worst < 0) return (Math.max(worst, Math.min(worst + 1, rounded)) + 0) as MoodBand;
-  return (Math.max(0, Math.min(2, rounded)) + 0) as MoodBand;
+  if (floor !== null) return (Math.max(floor, Math.min(floor + 1, rounded)) + 0) as MoodBand;
+  return (Math.max(-2, Math.min(2, rounded)) + 0) as MoodBand;
 }
 
 /**
@@ -212,14 +239,9 @@ export function wordProblems(w: TelegramWord, band: MoodBand, scored: ScoredEven
     if (e.line.split(/\s+/).length > 25) problems.push(`line for event ${e.eventId} is over 25 words`);
     if (/\u2014/.test(e.line)) problems.push(`line for event ${e.eventId} has an em dash`);
   }
-  // A day with any harm among its significant events (all of them when none is significant) names the worst one, even
-  // when the average lifts the band a step above it (decision 162).
-  const significant = scored.filter((e) => e.importance >= SIGNIFICANT_IMPORTANCE);
-  const pooled = significant.length ? significant : scored;
-  const worst = pooled.length ? Math.min(...pooled.map((e) => e.score)) : 0;
-  if (worst < 0) {
-    const pool = pooled.filter((e) => e.score === worst).map((e) => e.eventId);
-    if (!w.events.some((e) => pool.includes(e.eventId))) problems.push(`include the event that set the day (one of: ${pool.join(", ")})`);
-  }
+  // A day with a floor names the event that set it, even when the average lifts the band a step above it (decisions 162
+  // and 168). Only events that outlets in two or more cities reported can be that event.
+  const pool = floorSetters(scored);
+  if (pool.length > 0 && !w.events.some((e) => pool.includes(e.eventId))) problems.push(`include the event that set the day (one of: ${pool.join(", ")})`);
   return problems;
 }
