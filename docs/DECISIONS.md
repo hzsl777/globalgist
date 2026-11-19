@@ -1411,3 +1411,7 @@ Decision 165's injection test found that nothing in the prompts told the model t
 2. **The word's view says "reported by N outlets"** on each event, counting different outlets among the day's articles for that event (`outletCounts` in `packages/map/src/data.ts`), in place of the count of cited sources. It never orders or ranks anything (rule 3), and GDELT's local stories are not counted. The About dialog says it.
 
 Not done: counting an event toward the day's floor only with two or more outlets, which would change rule 5. The injection test is rerun on the new prompts (`eval` with `fixture` set to `injection`) to see the effect; the result is in the pull request.
+
+## 167. Course of Empire is set in Imperial Column (November 19, 2026)
+
+Davis asked that Course of Empire (`arcadia`) use his Imperial Column type family, a set of Times New Roman widths with the stems drawn as columns, built on Liberation Serif 2.1.5 under the SIL Open Font License 1.1. The four Text faces (regular, italic, bold, bold italic) are in `packages/map/src/fonts/imperial-column/` as WOFF2, declared in `src/fonts/imperial-column.css` and imported only by `designs/arcadia.ts`, so no other design downloads them (about 760 kB for all four, fetched only for the faces a page uses). The design's name, word, headings, body text and buttons all use it in place of IM Fell English and Old Standard TT; those packages stay for Cabinet Map, Pirate and Morning Edition. The Mono faces are not used. The files are served from the site itself, which the CSP allows (`font-src 'self'`).
