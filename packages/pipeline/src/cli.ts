@@ -22,7 +22,7 @@ import { runSelect } from "./stages/select.js";
 import { runTelegram } from "./stages/telegram.js";
 import { runLocal } from "./stages/local.js";
 import { daySummary } from "./summary.js";
-import { checkMapFile, writeMapFiles } from "./map-files.js";
+import { checkMapFile, readPublishedMap, writeMapFiles } from "./map-files.js";
 import { FEED_XML } from "./fixtures/day.js";
 import { appendFileSync, existsSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -204,7 +204,7 @@ switch (command) {
     const keep: { stories?: LocalStory[] } = {};
     // The file already published, when it is this day's: its outlet stories' places tell the local stage where the
     // outlets are (decision 147), and its outlet stories are kept, so a refresh reads nothing back from the database.
-    const base = values.in && existsSync(values.in) ? (JSON.parse(readFileSync(values.in, "utf8")) as MapFile) : null;
+    const base = readPublishedMap(values.in);
     const outletPlaces =
       base && base.runDate === latest ? [...new Set(base.items.filter((i) => i.via !== "gdelt").map((i) => i.place))].flatMap((p) => (base.places[p] ? [base.places[p]] : [])) : undefined;
     console.log(await recorded(d, latest, "refresh", () => runLocal(d, latest, config.local, undefined, undefined, rollingWindow(), keep, outletPlaces)));
