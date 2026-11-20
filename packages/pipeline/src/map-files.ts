@@ -96,3 +96,18 @@ export function checkMapFile(path: string, manifest?: string): string[] {
   const tiles = manifest ? (JSON.parse(readFileSync(manifest, "utf8")) as { key: string; file: string }[]) : [];
   return mapFileProblems(readFileSync(path, "utf8"), tiles);
 }
+
+/**
+ * The map file already published, read from the path the refresh downloaded it to. A missing, empty or broken file is
+ * null, with a warning, so the refresh exports from the database instead of stopping (decision 169): a failed download
+ * can leave an empty file behind.
+ */
+export function readPublishedMap(path: string | undefined): MapFile | null {
+  if (!path || !existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, "utf8")) as MapFile;
+  } catch {
+    console.warn(`${path} is empty or not JSON; exporting from the database instead.`);
+    return null;
+  }
+}

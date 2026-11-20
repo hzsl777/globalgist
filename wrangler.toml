@@ -2,6 +2,9 @@
 # The config sits at the repository root so a plain `npx wrangler deploy` works from here: that is what
 # Cloudflare's Git integration (Workers Builds) runs, and what `npm run web:deploy` runs (decision 38).
 name = "globalgist"
+# The account that holds the Worker and the globalgist-maps bucket. Wrangler cannot pick between accounts without it in a
+# run with no terminal, and the token can see two (decision 169). The id is not a secret: it is in every build link.
+account_id = "e267e1f127c593ca53b2fd3b5f70ed04"
 main = "packages/web/src/index.ts"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { MapEvent, MapFile, MapItem } from "@2dayai/core";
 import { events, latestFinishedMapDate, latestMapDate, runs, type Db } from "@2dayai/db";
-import { checkMapFile, mapFileProblems, writeMapFiles } from "./map-files.js";
+import { checkMapFile, mapFileProblems, readPublishedMap, writeMapFiles } from "./map-files.js";
 import { createTestDb } from "./test/db.js";
 
 const place = { id: "p1", name: "Lima", lat: -12.05, lon: -77.04 };
@@ -121,3 +121,18 @@ describe("the day the refresh and the export publish", () => {
     expect(await latestFinishedMapDate(db)).toBe("2026-09-29");
   });
 });
+
+describe("readPublishedMap (decision 169)", () => {
+  it("reads a published map, and treats a missing, empty or broken file as none", () => {
+    const file = join(dir, "published.json");
+    writeFileSync(file, JSON.stringify(day()));
+    expect(readPublishedMap(file)?.runDate).toBe("2026-09-29");
+    expect(readPublishedMap(undefined)).toBeNull();
+    expect(readPublishedMap(join(dir, "missing.json"))).toBeNull();
+    writeFileSync(file, "");
+    expect(readPublishedMap(file)).toBeNull();
+    writeFileSync(file, "{not json");
+    expect(readPublishedMap(file)).toBeNull();
+  });
+});
+
